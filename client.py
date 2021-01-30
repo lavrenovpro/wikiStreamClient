@@ -1,7 +1,7 @@
 import os
-
-import requests
+import json
 from kafka import KafkaProducer
+from sseclient import SSEClient as EventSource
 
 
 def run_client():
@@ -9,11 +9,13 @@ def run_client():
     wiki_url = get_env_parameter('WIKI_URL', 'https://stream.wikimedia.org/v2/stream/revision-create')
     topic_name = get_env_parameter('TOPIC_NAME', 'wiki_revision_create')
 
-    producer = KafkaProducer(bootstrap_servers=[bootstrap_server])
+    producer = KafkaProducer(bootstrap_servers=[bootstrap_server],
+                             value_serializer=lambda v: json.dumps(v).encode('utf-8'))
 
-    r = requests.get(wiki_url, stream=True)
-    for line in r.iter_lines():
-        producer.send(topic_name, line)
+    for event in EventSource(wiki_url):
+        if event.event == 'message':
+            data = event.data
+            producer.send(topic_name, data)
 
 
 def get_env_parameter(parameter_name, default_value):
