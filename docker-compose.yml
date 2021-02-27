@@ -1,0 +1,10 @@
+version: "3"
+services:
+  wiki_stream_client:
+    env_file:
+      - ./config/.env.dev
+    hostname: wiki_stream_client
+    container_name: wiki_stream_client
+    image: wiki_stream_client
+    restart: always
+    entrypoint: [ "python", "./client.py" ]

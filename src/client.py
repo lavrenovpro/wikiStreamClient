@@ -1,13 +1,15 @@
 import os
 import json
+import sys
+
 from kafka import KafkaProducer
 from sseclient import SSEClient as EventSource
 
 
 def run_client():
-    bootstrap_server = get_env_parameter('BOOTSTRAP_SERVER', 'latitude:9092')
-    wiki_url = get_env_parameter('WIKI_URL', 'https://stream.wikimedia.org/v2/stream/revision-create')
-    topic_name = get_env_parameter('TOPIC_NAME', 'wiki_revision_create')
+    bootstrap_server = get_env_parameter_or_panic('BOOTSTRAP_SERVER')
+    wiki_url = get_env_parameter_or_panic('WIKI_URL')
+    topic_name = get_env_parameter_or_panic('TOPIC_NAME')
 
     producer = KafkaProducer(bootstrap_servers=[bootstrap_server],
                              value_serializer=lambda v: json.dumps(v).encode('utf-8'))
@@ -18,11 +20,11 @@ def run_client():
             producer.send(topic_name, data)
 
 
-def get_env_parameter(parameter_name, default_value):
+def get_env_parameter_or_panic(parameter_name):
     try:
-        return os.environ[parameter_name].lower
+        return os.environ[parameter_name].lower()
     except KeyError:
-        return default_value
+        sys.exit(parameter_name + ' is not specified')
 
 
 if __name__ == '__main__':
